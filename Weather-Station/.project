@@ -4,6 +4,10 @@
 	<comment></comment>
 	<projects>
 		<project>ArduinoCore</project>
+		<project>FSK600Bauds900Hz1500HzModulation</project>
+		<project>GPS</project>
+		<project>SD</project>
+		<project>SoftwareSerial</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
