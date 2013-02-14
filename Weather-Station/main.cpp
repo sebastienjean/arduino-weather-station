@@ -17,42 +17,8 @@
 #include <SD.h>
 #include <SoftwareSerial.h>
 #include <FSK600BaudTA900TB1500Mod.h>
+#include <defs.h>
 
-// User Button
-#define USER_BUTTON 5
-
-// Red LED
-#define LED_RED 9
-
-// Orange LED
-#define LED_ORANGE 8
-
-// Green LED
-#define LED_GREEN 7
-
-// Blue LED
-#define LED_BLUE 6
-
-// FSK modulator TX PIN
-#define FSK_MOD_TX 6
-
-// differential pressure analog sensor PIN
-#define DIFF_P A0
-
-// absolute pressure analog sensor PIN
-#define ABS_P A1
-
-// external temperature analog sensor PIN
-#define TEMPOUT A2
-
-// internal temperature analog sensor PIN
-#define TEMPIN A3
-
-// battery voltage analog sensor PIN
-#define VOLTAGE A4
-
-// SD card Chip Select PIN
-#define SD_CS 10
 
 // SD logfile path
 #define LOGFILE "data.txt"
@@ -130,7 +96,7 @@ void setup() {
 
 	// SD card init
 	Serial.print(F("SD Init..."));
-	pinMode(10, OUTPUT);
+	pinMode(SD_CS, OUTPUT);
 	if (!SD.begin(SD_CS)) {
 		Serial.println(F("KO"));
 		digitalWrite(LED_RED,HIGH);
