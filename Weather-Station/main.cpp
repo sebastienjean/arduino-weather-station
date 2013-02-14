@@ -226,7 +226,7 @@ void loop() {
 		fskMod.write(kiwiFrame[cpt]);
 	fskMod.off();
 
-	// Opening logFile
+	// Logging
 	logFile = SD.open(LOGFILE, FILE_WRITE);
 	if (logFile) {
 		//Serial.println(F("log file access success"));
@@ -237,7 +237,11 @@ void loop() {
 		digitalWrite(LED_GREEN, HIGH);
 		delay(100);
 		digitalWrite(LED_GREEN, LOW);
-	} else {
+		logFile.print(sensorString);
+		logFile.close();
+	}
+	else
+	{
 		Serial.println(F("log file access failure"));
 		digitalWrite(LED_RED, HIGH);
 		delay(100);
@@ -258,10 +262,5 @@ void loop() {
 	for (int cpt = 0; cpt < strlen(sensorString); cpt++)
 		fskMod.write(sensorString[cpt]);
 	fskMod.off();
-
-	// Logging
-	if (logFile) {
-		logFile.print(sensorString);
-	}
 }
 
