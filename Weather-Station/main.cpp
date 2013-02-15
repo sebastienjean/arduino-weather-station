@@ -68,16 +68,62 @@ int main(void) {
 
 	return 0;
 }
+
 /**
- * Arduino's setup function, called once at startup, after init
+ * Initializes LEDs wirings
  */
-void setup() {
-	// LEDs init
+void initLEDs()
+{
 	pinMode(LED_RED, OUTPUT);
 	pinMode(LED_ORANGE, OUTPUT);
 	pinMode(LED_GREEN, OUTPUT);
 	pinMode(LED_BLUE, OUTPUT);
+}
 
+/**
+ * Initializes SD shield
+ */
+// TODO fix comment
+int initSdShield()
+{
+	pinMode(SD_CS, OUTPUT);
+	return SD.begin(SD_CS);
+}
+
+
+/**
+ * Initializes User switch
+ */
+void initUserButton()
+{
+	pinMode(USER_BUTTON, INPUT);
+	digitalWrite(USER_BUTTON, HIGH);
+}
+
+/**
+ * Initializes serial debug communication
+ */
+void initDebug()
+{
+	Serial.begin(600);
+}
+
+
+/**
+ * Resets KIWI frame contents
+ */
+void resetKiwiFrame()
+{
+	for (int i = 0; i < 11; i++)
+		kiwiFrame[i] = 0x00;
+	kiwiFrame[0] = 0xFF;
+}
+
+/**
+ * Plays LEDs startup sequence
+ */
+void showLEDsStartupSequence()
+{
 	digitalWrite(LED_RED, HIGH);
 	digitalWrite(LED_ORANGE, HIGH);
 	digitalWrite(LED_GREEN, HIGH);
@@ -87,71 +133,88 @@ void setup() {
 	digitalWrite(LED_ORANGE, LOW);
 	digitalWrite(LED_GREEN, LOW);
 	digitalWrite(LED_BLUE, LOW);
+}
 
-	pinMode(USER_BUTTON, INPUT);
-	digitalWrite(USER_BUTTON, HIGH);
+/**
+ * Displays status (OK/KO) using red/green LEDs
+ */
+void showStatus(int status)
+{
+	if (status)
+	{
+		digitalWrite(LED_GREEN,HIGH);
+		digitalWrite(LED_RED,LOW);
+	}
+	else
+	{
+		digitalWrite(LED_GREEN,LOW);
+		digitalWrite(LED_RED,HIGH);
+	}
+}
 
-	// Serial debug at 600 baud
-	Serial.begin(600);
+void quicklyMakeSomeLedBlinkSeveralTimes(int led, int times)
+{
+	for (int i=0;i<times;i++)
+	{
+		digitalWrite(led, HIGH);
+		delay(100);
+		digitalWrite(led, LOW);
+		delay(100);
+	}
+}
+
+int logMessageOnSdCard(char *message)
+{
+	logFile = SD.open(LOGFILE, FILE_WRITE);
+	if (logFile)
+	{
+		logFile.println(message);
+		logFile.close();
+	}
+	return logFile;
+}
+
+/**
+ * Arduino's setup function, called once at startup, after init
+ */
+void setup()
+{
+	initLEDs();
+
+	showLEDsStartupSequence();
+
+	initUserButton();
+
+	initDebug();
 
 	// SD card init
 	Serial.print(F("SD Init..."));
-	pinMode(SD_CS, OUTPUT);
-	if (!SD.begin(SD_CS)) {
+
+	if (!initSdShield())
+	{
 		Serial.println(F("KO"));
-		digitalWrite(LED_RED,HIGH);
+		showStatus(0);
 	}
 	else
 	{
 		Serial.println(F("OK"));
-		digitalWrite(LED_GREEN,HIGH);
+		showStatus(0);
 		delay(1000);
 		if (digitalRead(USER_BUTTON) == 0)
 		{
 			// delete the file:
-				Serial.println(F("SD clear..."));
-				SD.remove(LOGFILE);
-				for (int i=0;i<5;i++)
-				{
-					digitalWrite(LED_ORANGE, HIGH);
-					delay(100);
-					digitalWrite(LED_ORANGE, LOW);
-					delay(100);
-				}
-			}
-			Serial.println(F("RESET"));
-			// opening logFile
-			logFile = SD.open(LOGFILE, FILE_WRITE);
-			if (logFile)
-			{
-				logFile.println(F("Logging Reset..."));
-				logFile.close();
-				Serial.println(F("OK"));
-				for (int i=0;i<5;i++)
-				{
-					digitalWrite(LED_GREEN, HIGH);
-					delay(100);
-					digitalWrite(LED_GREEN, LOW);
-					delay(100);
-				}
-			}
-			// if the file isn't open, pop up an error:
-			else
-			{
-				Serial.println(F("KO"));
-				for (int i=0;i<5;i++)
-				{
-					digitalWrite(LED_RED, HIGH);
-					delay(100);
-					digitalWrite(LED_RED, LOW);
-					delay(100);
-				}
-			}
+			Serial.println(F("SD_C"));
+			SD.remove(LOGFILE);
+			quicklyMakeSomeLedBlinkSeveralTimes(LED_ORANGE, 5);
 		}
+		Serial.println(F("R"));
+		if (logMessageOnSdCard("R"))
+			quicklyMakeSomeLedBlinkSeveralTimes(LED_GREEN, 5);
+		else
+			quicklyMakeSomeLedBlinkSeveralTimes(LED_RED, 5);
+	}
 
-	for (int i = 0; i < 11; i++)
-		kiwiFrame[i] = 0x00;
-	kiwiFrame[0] = 0xFF;
+	resetKiwiFrame();
 
 	// wdt_enable(WDTO_8S);
 }
