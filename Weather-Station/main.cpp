@@ -17,39 +17,29 @@
 #include <SD.h>
 #include <SoftwareSerial.h>
 #include <FSK600BaudTA900TB1500Mod.h>
-#include <defs.h>
+#include <pins.h>
 
+#define LOG_FILE_PATH "data.txt"
 
-// SD logfile path
-#define LOGFILE "data.txt"
-
-#define SENSOR_STRING_LENGTH 40
+#define SENSOR_DATA_ASCII_STRING_LENGTH 40
 
 #define KIWI_FRAME_LENGTH 11
 
-// FSK modulator
-FSK600BaudTA900TB1500Mod fskMod(FSK_MOD_TX);
+FSK600BaudTA900TB1500Mod fskModulator(FSK_MODULATOR_TX);
 
-// sensor data, as ASCII
-char sensorString[SENSOR_STRING_LENGTH];
+char sensorDataAsAsciiString[SENSOR_DATA_ASCII_STRING_LENGTH];
 
-// log File
 File logFile;
 
-// absolute pressure sensor value
-int absValue = 0;
+int absolutePressureSensorValue = 0;
 
-// differential pressure sensor value
-int diffValue = 0;
+int differentialPressureSensorValue = 0;
 
-// internal temperature sensor value
-int tempInValue = 0;
+int internalTemperatureSensorValue = 0;
 
-// external temperature sensor value
-int tempOutValue = 0;
+int externalTemperatureSensorValue = 0;
 
-// battery voltage sensor value
-int voltageValue = 0;
+int batteryVoltageSensorValue = 0;
 
 // Kiwi (Planete-Sciences/ CNES format) Frame
 unsigned char kiwiFrame[KIWI_FRAME_LENGTH];
@@ -74,10 +64,10 @@ int main(void) {
  */
 void initLEDs()
 {
-	pinMode(LED_RED, OUTPUT);
-	pinMode(LED_ORANGE, OUTPUT);
-	pinMode(LED_GREEN, OUTPUT);
-	pinMode(LED_BLUE, OUTPUT);
+	pinMode(RED_LED, OUTPUT);
+	pinMode(ORANGE_LED, OUTPUT);
+	pinMode(GREEN_LED, OUTPUT);
+	pinMode(BLUE_LED, OUTPUT);
 }
 
 /**
@@ -86,8 +76,8 @@ void initLEDs()
 // TODO fix comment
 int initSdShield()
 {
-	pinMode(SD_CS, OUTPUT);
-	return SD.begin(SD_CS);
+	pinMode(SD_CARD_CHIP_SELECT, OUTPUT);
+	return SD.begin(SD_CARD_CHIP_SELECT);
 }
 
 
@@ -124,15 +114,15 @@ void resetKiwiFrame()
  */
 void showLEDsStartupSequence()
 {
-	digitalWrite(LED_RED, HIGH);
-	digitalWrite(LED_ORANGE, HIGH);
-	digitalWrite(LED_GREEN, HIGH);
-	digitalWrite(LED_BLUE, HIGH);
+	digitalWrite(RED_LED, HIGH);
+	digitalWrite(ORANGE_LED, HIGH);
+	digitalWrite(GREEN_LED, HIGH);
+	digitalWrite(BLUE_LED, HIGH);
 	delay(1000);
-	digitalWrite(LED_RED, LOW);
-	digitalWrite(LED_ORANGE, LOW);
-	digitalWrite(LED_GREEN, LOW);
-	digitalWrite(LED_BLUE, LOW);
+	digitalWrite(RED_LED, LOW);
+	digitalWrite(ORANGE_LED, LOW);
+	digitalWrite(GREEN_LED, LOW);
+	digitalWrite(BLUE_LED, LOW);
 }
 
 /**
@@ -142,13 +132,13 @@ void showStatus(int status)
 {
 	if (status)
 	{
-		digitalWrite(LED_GREEN,HIGH);
-		digitalWrite(LED_RED,LOW);
+		digitalWrite(GREEN_LED,HIGH);
+		digitalWrite(RED_LED,LOW);
 	}
 	else
 	{
-		digitalWrite(LED_GREEN,LOW);
-		digitalWrite(LED_RED,HIGH);
+		digitalWrite(GREEN_LED,LOW);
+		digitalWrite(RED_LED,HIGH);
 	}
 }
 
@@ -165,7 +155,7 @@ void quicklyMakeSomeLedBlinkSeveralTimes(int led, int times)
 
 int logMessageOnSdCard(char *message)
 {
-	logFile = SD.open(LOGFILE, FILE_WRITE);
+	logFile = SD.open(LOG_FILE_PATH, FILE_WRITE);
 	if (logFile)
 	{
 		logFile.println(message);
@@ -204,14 +194,14 @@ void setup()
 		{
 			// delete the file:
 			Serial.println(F("SD_C"));
-			SD.remove(LOGFILE);
-			quicklyMakeSomeLedBlinkSeveralTimes(LED_ORANGE, 5);
+			SD.remove(LOG_FILE_PATH);
+			quicklyMakeSomeLedBlinkSeveralTimes(ORANGE_LED, 5);
 		}
 		Serial.println(F("R"));
 		if (logMessageOnSdCard("R"))
-			quicklyMakeSomeLedBlinkSeveralTimes(LED_GREEN, 5);
+			quicklyMakeSomeLedBlinkSeveralTimes(GREEN_LED, 5);
 		else
-			quicklyMakeSomeLedBlinkSeveralTimes(LED_RED, 5);
+			quicklyMakeSomeLedBlinkSeveralTimes(RED_LED, 5);
 	}
 
 	resetKiwiFrame();
@@ -227,56 +217,56 @@ void loop() {
 	unsigned char chk = 0;
 
 	// millis since last reset processing
-	itoa(millis() / 1000, sensorString, 10);
-	sensorStringOffset = strlen(sensorString);
-	sensorString[sensorStringOffset++] = ',';
+	itoa(millis() / 1000, sensorDataAsAsciiString, 10);
+	sensorStringOffset = strlen(sensorDataAsAsciiString);
+	sensorDataAsAsciiString[sensorStringOffset++] = ',';
 
 	// absolute pressure processing
-	absValue = analogRead(ABS_P);
-	itoa(absValue, sensorString + sensorStringOffset, 10);
-	sensorStringOffset = strlen(sensorString);
-	sensorString[sensorStringOffset++] = ',';
-	kiwiFrame[1] = (unsigned char) (absValue / 4);
+	absolutePressureSensorValue = analogRead(ABSOLUTE_PRESSURE_ANALOG_SENSOR);
+	itoa(absolutePressureSensorValue, sensorDataAsAsciiString + sensorStringOffset, 10);
+	sensorStringOffset = strlen(sensorDataAsAsciiString);
+	sensorDataAsAsciiString[sensorStringOffset++] = ',';
+	kiwiFrame[1] = (unsigned char) (absolutePressureSensorValue / 4);
 	if (kiwiFrame[1] == 0xFF)
 		kiwiFrame[1] = 0xFE;
 
 	// differential pressure processing
-	diffValue = analogRead(DIFF_P);
-	itoa(diffValue, sensorString + sensorStringOffset, 10);
-	sensorStringOffset = strlen(sensorString);
-	sensorString[sensorStringOffset++] = ',';
-	kiwiFrame[2] = (unsigned char) (diffValue / 4);
+	differentialPressureSensorValue = analogRead(DIFFERENTIAL_PRESSURE_ANALOG_SENSOR);
+	itoa(differentialPressureSensorValue, sensorDataAsAsciiString + sensorStringOffset, 10);
+	sensorStringOffset = strlen(sensorDataAsAsciiString);
+	sensorDataAsAsciiString[sensorStringOffset++] = ',';
+	kiwiFrame[2] = (unsigned char) (differentialPressureSensorValue / 4);
 	if (kiwiFrame[2] == 0xFF)
 		kiwiFrame[2] = 0xFE;
 
 	// internal temperature pressure processing
-	tempInValue = analogRead(TEMPIN);
-	itoa(tempInValue, sensorString + sensorStringOffset, 10);
-	sensorStringOffset = strlen(sensorString);
-	sensorString[sensorStringOffset++] = ',';
-	kiwiFrame[3] = (unsigned char) (tempInValue / 4);
+	internalTemperatureSensorValue = analogRead(INTERNAL_TEMPERATURE_ANALOG_SENSOR);
+	itoa(internalTemperatureSensorValue, sensorDataAsAsciiString + sensorStringOffset, 10);
+	sensorStringOffset = strlen(sensorDataAsAsciiString);
+	sensorDataAsAsciiString[sensorStringOffset++] = ',';
+	kiwiFrame[3] = (unsigned char) (internalTemperatureSensorValue / 4);
 	if (kiwiFrame[3] == 0xFF)
 		kiwiFrame[3] = 0xFE;
 
 	// external temperature pressure processing
-	tempOutValue = analogRead(TEMPOUT);
-	itoa(tempOutValue, sensorString + sensorStringOffset, 10);
-	sensorStringOffset = strlen(sensorString);
-	sensorString[sensorStringOffset++] = ',';
-	kiwiFrame[4] = (unsigned char) (tempOutValue / 4);
+	externalTemperatureSensorValue = analogRead(EXTERNAL_TEMPERATURE_ANALOG_SENSOR);
+	itoa(externalTemperatureSensorValue, sensorDataAsAsciiString + sensorStringOffset, 10);
+	sensorStringOffset = strlen(sensorDataAsAsciiString);
+	sensorDataAsAsciiString[sensorStringOffset++] = ',';
+	kiwiFrame[4] = (unsigned char) (externalTemperatureSensorValue / 4);
 	if (kiwiFrame[4] == 0xFF)
 		kiwiFrame[4] = 0xFE;
 
 	// battery voltage processing
-	voltageValue = analogRead(VOLTAGE);
-	itoa(voltageValue, sensorString + sensorStringOffset, 10);
-	sensorStringOffset = strlen(sensorString);
-	sensorString[sensorStringOffset++] = '\r';
-	sensorString[sensorStringOffset++] = '\n';
-	kiwiFrame[5] = (unsigned char) (voltageValue / 4);
+	batteryVoltageSensorValue = analogRead(BATTERY_VOLTAGE_ANALOG_SENSOR);
+	itoa(batteryVoltageSensorValue, sensorDataAsAsciiString + sensorStringOffset, 10);
+	sensorStringOffset = strlen(sensorDataAsAsciiString);
+	sensorDataAsAsciiString[sensorStringOffset++] = '\r';
+	sensorDataAsAsciiString[sensorStringOffset++] = '\n';
+	kiwiFrame[5] = (unsigned char) (batteryVoltageSensorValue / 4);
 	if (kiwiFrame[5] == 0xFF)
 		kiwiFrame[5] = 0xFE;
-	kiwiFrame[9] = (unsigned char) (voltageValue / 8);
+	kiwiFrame[9] = (unsigned char) (batteryVoltageSensorValue / 8);
 
 	for (int cpt = 1; cpt < KIWI_FRAME_LENGTH - 1; cpt++)
 		chk = (unsigned char) ((chk + kiwiFrame[cpt]) % 256);
@@ -286,44 +276,44 @@ void loop() {
 
 	// Kiwi Frame transmission
 	for (int cpt = 0; cpt < KIWI_FRAME_LENGTH; cpt++)
-		fskMod.write(kiwiFrame[cpt]);
-	fskMod.off();
+		fskModulator.write(kiwiFrame[cpt]);
+	fskModulator.off();
 
 	// Logging
-	logFile = SD.open(LOGFILE, FILE_WRITE);
+	logFile = SD.open(LOG_FILE_PATH, FILE_WRITE);
 	if (logFile) {
 		//Serial.println(F("log file access success"));
-		digitalWrite(LED_GREEN, HIGH);
+		digitalWrite(GREEN_LED, HIGH);
 		delay(100);
-		digitalWrite(LED_GREEN, LOW);
+		digitalWrite(GREEN_LED, LOW);
 		delay(100);
-		digitalWrite(LED_GREEN, HIGH);
+		digitalWrite(GREEN_LED, HIGH);
 		delay(100);
-		digitalWrite(LED_GREEN, LOW);
-		logFile.print(sensorString);
+		digitalWrite(GREEN_LED, LOW);
+		logFile.print(sensorDataAsAsciiString);
 		logFile.close();
 	}
 	else
 	{
 		Serial.println(F("log file access failure"));
-		digitalWrite(LED_RED, HIGH);
+		digitalWrite(RED_LED, HIGH);
 		delay(100);
-		digitalWrite(LED_RED, LOW);
+		digitalWrite(RED_LED, LOW);
 		delay(100);
-		digitalWrite(LED_RED, HIGH);
+		digitalWrite(RED_LED, HIGH);
 		delay(100);
-		digitalWrite(LED_RED, LOW);
+		digitalWrite(RED_LED, LOW);
 	}
 		//wdt_reset();
 
 		// Sensor data processing
 
 		// Debug
-	Serial.print(sensorString);
+	Serial.print(sensorDataAsAsciiString);
 
 	// Transmission
-	for (int cpt = 0; cpt < strlen(sensorString); cpt++)
-		fskMod.write(sensorString[cpt]);
-	fskMod.off();
+	for (int cpt = 0; cpt < strlen(sensorDataAsAsciiString); cpt++)
+		fskModulator.write(sensorDataAsAsciiString[cpt]);
+	fskModulator.off();
 }
 
