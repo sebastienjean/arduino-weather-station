@@ -45,21 +45,6 @@ int batteryVoltageSensorValue = 0;
 unsigned char kiwiFrame[KIWI_FRAME_LENGTH];
 
 /**
- * Application's main (what else to say?)
- * @return (never)
- */
-int main(void) {
-	init();
-
-	setup();
-
-	for (;;)
-		loop();
-
-	return 0;
-}
-
-/**
  * Initializes LEDs wirings
  */
 void initLEDs()
@@ -188,7 +173,7 @@ void setup()
 	else
 	{
 		Serial.println(F("OK"));
-		showStatus(0);
+		showStatus(1);
 		delay(1000);
 		if (digitalRead(USER_BUTTON) == 0)
 		{
@@ -315,5 +300,20 @@ void loop() {
 	for (int cpt = 0; cpt < strlen(sensorDataAsAsciiString); cpt++)
 		fskModulator.write(sensorDataAsAsciiString[cpt]);
 	fskModulator.off();
+}
+
+/**
+ * Application's main (what else to say?)
+ * @return (never)
+ */
+int main(void) {
+	init();
+
+	setup();
+
+	for (;;)
+		loop();
+
+	return 0;
 }
 
