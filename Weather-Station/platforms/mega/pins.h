@@ -18,7 +18,7 @@
 
 #define RED_LED 9
 
-#define ORANGE_LED 8
+#define ORANGE_LED 10
 
 #define GREEN_LED 7
 
